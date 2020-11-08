@@ -221,19 +221,17 @@ while True:
                         blocks_sent = 0
                         print("Sent 10 blocks to node B, let's tell that to the server!")
                         node_A_message = "10"
-                        #ClientSocket.send(node_A_message.encode("ascii"))
+                        ClientSocket.send(node_A_message.encode("ascii"))
                         
-                        #response = ClientSocket.recv(2048)
-                        #plain_response = response.decode('utf-8')
-                        #print("Server said", plain_response)
+                        response = ClientSocket.recv(2048)
+                        plain_response = response.decode('utf-8')
+                        print("Server said", plain_response)
 
                     substring = ""
                     counter = 0
             sent_full_blocks = "abc4567890123456"
             sent_full_blocks_binary = sent_full_blocks.encode("ascii")
-            #cipher = AES.new(decrypted_key, AES.MODE_ECB)
-            #ciphered_data = cipher.encrypt(sent_full_blocks_binary)
-            #encrypt the final string
+            
             block_cipher_encryption = simple_ecb_encryption_for_ofb_implementation(decrypted_key, decrypted_vector)
             # the result is the next initialization vector
             decrypted_vector = block_cipher_encryption
@@ -272,10 +270,10 @@ while True:
                     blocks_sent = 0
                     print("Sent 10 blocks to node B, let's tell that to the server!")
                     node_A_message = "10"
-                    #ClientSocket.send(node_A_message.encode("ascii"))
-                    #response = ClientSocket.recv(2048)
-                    #plain_response = response.decode('utf-8')
-                    #print("Server said", plain_response)
+                    ClientSocket.send(node_A_message.encode("ascii"))
+                    response = ClientSocket.recv(2048)
+                    plain_response = response.decode('utf-8')
+                    print("Server said", plain_response)
             else:
                 more_or_not = "nomoreblocksaaaa"
                 more_or_not_binary = more_or_not.encode("ascii")
@@ -286,8 +284,11 @@ while True:
                 ciphered_data = bxor(more_or_not_binary, block_cipher_encryption)
 
                 ClientB.send(ciphered_data)
-
-            break
+        
+        server_message_end = "finish"
+        print("Finished. Sent a message to the server to tell him.")
+        ClientSocket.send(server_message_end.encode("ascii"))
+        break
 
     ClientB.close()
     ServerSocketA.close()

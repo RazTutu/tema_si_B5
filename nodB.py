@@ -192,15 +192,14 @@ while True:
                     # tell the server you received 10 blocks
                     print("Received 10 blocks")
                     node_B_message = "10"
-                    #ClientSocket.send(node_B_message.encode("ascii"))
-                    #response = ClientSocket.recv(2048)
-                    #plain_response = response.decode('utf-8')
-                    #print("Server said", plain_response)
+                    ClientSocket.send(node_B_message.encode("ascii"))
+                    response = ClientSocket.recv(2048)
+                    plain_response = response.decode('utf-8')
+                    print("Server said", plain_response)
 
             number_of_messages += 1
             if original_text.decode('utf-8') == "abc4567890123456":
                 ResponseNodB = ClientSocketToA.recv(16)
-                #original_text = decrypt_ecb(decrypted_key, ResponseNodB)
 
                 block_cipher_encryption = simple_ecb_encryption_for_ofb_implementation(decrypted_key, decrypted_vector)
                 decrypted_vector = block_cipher_encryption
@@ -224,17 +223,17 @@ while True:
                         blocks_received = 0
                         # tell the server you received 10 blocks
                         node_B_message = "10"
-                        #ClientSocket.send(node_B_message.encode("ascii"))
-                        #response = ClientSocket.recv(2048)
-                        #plain_response = response.decode('utf-8')
-                        #print("Server said", plain_response)
+                        ClientSocket.send(node_B_message.encode("ascii"))
+                        response = ClientSocket.recv(2048)
+                        plain_response = response.decode('utf-8')
+                        print("Server said", plain_response)
                     break 
                 elif after_full_blocks == "nomoreblocksaaaa":
                     break
     final_message_to_server = "finish"
-    #ClientSocket.send(final_message.encode("ascii"))
-    print(final_message_to_server)
+    ClientSocket.send(final_message_to_server.encode("ascii"))
     print(final_message)
+    print("Finished. Sent a message to the server to tell him.")
     ClientSocketToA.close()
 
 ClientSocket.close()
