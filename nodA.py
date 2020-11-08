@@ -32,6 +32,22 @@ def encrypt_confirmation_message_ofb(key, message, initialization_vector):
     ciphered_data = cipher.encrypt(message.encode('ascii'))
     return ciphered_data
 
+def simple_ecb_encryption_for_ofb_implementation(key, message):
+    cipher = AES.new(key, AES.MODE_ECB) # Create a AES cipher object with the key using the mode ECB
+    # no need for padding because key is of 16 bytes, the same as an AES block
+    ciphered_data = cipher.encrypt(message)
+    return ciphered_data
+
+def bxor(ba1, ba2):
+    """ XOR two byte strings """
+    return bytes([_a ^ _b for _a, _b in zip(ba1, ba2)])
+
+def own_pad(string):
+    aux_string = string
+    while len(string) < 16:
+        aux_string = string + "_"
+    return aux_string
+
 
 ClientSocket = socket.socket()
 print('Waiting for connection')
@@ -173,6 +189,104 @@ while True:
             # Tell the server that we're done
             final_message = "finish"
             ClientSocket.send(final_message.encode("ascii"))
+            break
+
+        elif final_encryption_mode == "OFB":
+            print("We will encrypt using OFB mode")
+            # encrypt OFB
+            plaintext_file = 'message.txt'
+            file_in = open(plaintext_file, 'r') # Open the file to read bytes
+            plaintext_data = file_in.read()
+            file_in.close()
+            counter = 0
+            blocks_sent = 0
+            substring = ""
+            for character in plaintext_data:
+                substring = substring + character
+                counter = counter + 1
+                if counter == 16:
+                    blocks_sent = blocks_sent + 1
+                
+                    # IMPLEMENT OUR OWN OFB
+                    block_cipher_encryption = simple_ecb_encryption_for_ofb_implementation(decrypted_key, decrypted_vector)
+                    # the result is the next initialization vector
+                    decrypted_vector = block_cipher_encryption
+                    #get the ciphered_data
+                    ciphered_data = bxor(substring.encode("ascii"), block_cipher_encryption)
+
+                    #now send it to node B
+                    ClientB.send(ciphered_data)
+                    #tell the server that A sent 10 blocks
+                    if blocks_sent == 10:
+                        blocks_sent = 0
+                        print("Sent 10 blocks to node B, let's tell that to the server!")
+                        node_A_message = "10"
+                        #ClientSocket.send(node_A_message.encode("ascii"))
+                        
+                        #response = ClientSocket.recv(2048)
+                        #plain_response = response.decode('utf-8')
+                        #print("Server said", plain_response)
+
+                    substring = ""
+                    counter = 0
+            sent_full_blocks = "abc4567890123456"
+            sent_full_blocks_binary = sent_full_blocks.encode("ascii")
+            #cipher = AES.new(decrypted_key, AES.MODE_ECB)
+            #ciphered_data = cipher.encrypt(sent_full_blocks_binary)
+            #encrypt the final string
+            block_cipher_encryption = simple_ecb_encryption_for_ofb_implementation(decrypted_key, decrypted_vector)
+            # the result is the next initialization vector
+            decrypted_vector = block_cipher_encryption
+            #get the ciphered_data
+            ciphered_data = bxor(sent_full_blocks_binary, block_cipher_encryption)
+
+            ClientB.send(ciphered_data)
+            # send this and send if there is needed one more decryption with padding
+            padded_string = ""
+            more_or_not = ""
+            if counter != 0:
+                # tell node B that one more is coming
+                more_or_not = "herecomesonemore"
+                block_cipher_encryption = simple_ecb_encryption_for_ofb_implementation(decrypted_key, decrypted_vector)
+                # the result is the next initialization vector
+                decrypted_vector = block_cipher_encryption
+                #get the ciphered_data
+                ciphered_data = bxor(more_or_not, block_cipher_encryption)
+
+                ClientB.send(ciphered_data)
+                for i in range(len(plaintext_data) - counter, len(plaintext_data)):
+                    padded_string = padded_string + plaintext_data[i]
+                    # here we will pad the string. padded_string needs to be padded and encrypted and sent
+                    
+                block_cipher_encryption = simple_ecb_encryption_for_ofb_implementation(decrypted_key, decrypted_vector)
+                # the result is the next initialization vector
+                decrypted_vector = block_cipher_encryption
+                #get the ciphered_data
+                ciphered_data = bxor(own_pad(padded_string).encode("ascii"), block_cipher_encryption)
+
+                ClientB.send(ciphered_data)
+
+                blocks_sent = blocks_sent + 1
+                # tell the server that A sent 10 blocks
+                if blocks_sent == 10:
+                    blocks_sent = 0
+                    print("Sent 10 blocks to node B, let's tell that to the server!")
+                    node_A_message = "10"
+                    #ClientSocket.send(node_A_message.encode("ascii"))
+                    #response = ClientSocket.recv(2048)
+                    #plain_response = response.decode('utf-8')
+                    #print("Server said", plain_response)
+            else:
+                more_or_not = "nomoreblocksaaaa"
+                more_or_not_binary = more_or_not.encode("ascii")
+                block_cipher_encryption = simple_ecb_encryption_for_ofb_implementation(decrypted_key, decrypted_vector)
+                # the result is the next initialization vector
+                decrypted_vector = block_cipher_encryption
+                #get the ciphered_data
+                ciphered_data = bxor(more_or_not_binary, block_cipher_encryption)
+
+                ClientB.send(ciphered_data)
+
             break
 
     ClientB.close()

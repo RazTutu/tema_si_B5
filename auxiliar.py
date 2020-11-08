@@ -23,4 +23,26 @@ enc_mess = cipher.encrypt(data)
 
 from random import randrange
 test = randrange(2)
-print(test)
+#print(test)
+
+def bxor(ba1, ba2):
+    """ XOR two byte strings """
+    return bytes([_a ^ _b for _a, _b in zip(ba1, ba2)])
+
+#OFB - CRIPTARE
+non_initialized_vector = 'textrandombattle'
+message = "1234567890123456"
+K2 = b'\xdb\xd3\xea\xf1\xb9\xbf\x06R\xcf\xc5#zh\x0c\xa9q'
+# criptez non_initialized_vector si K2 cu ECB
+cipher = AES.new(key, AES.MODE_ECB) # Create a AES cipher object with the key using the mode ECB
+# no need for padding because key is of 16 bytes, the same as an AES block
+ciphered_data = cipher.encrypt(non_initialized_vector.encode("ascii"))
+print("encrypted data is", ciphered_data)
+
+next_vector = ciphered_data 
+flag = bxor(K2, ciphered_data)
+print("xored value is", flag)
+
+#faci xor intre rezultatu de mai devreme si ciphered_data, iti da K2
+flag2 = bxor(flag, ciphered_data)
+print("tre sa dea k2 cred", flag2)

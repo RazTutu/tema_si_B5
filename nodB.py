@@ -42,6 +42,24 @@ def decrypt_ecb_unpad(key, message):
     original_data = unpad(cipher.decrypt(message), AES.block_size)
     return original_data
 
+def bxor(ba1, ba2):
+    """ XOR two byte strings """
+    return bytes([_a ^ _b for _a, _b in zip(ba1, ba2)])
+
+def simple_ecb_encryption_for_ofb_implementation(key, message):
+    cipher = AES.new(key, AES.MODE_ECB) # Create a AES cipher object with the key using the mode ECB
+    # no need for padding because key is of 16 bytes, the same as an AES block
+    ciphered_data = cipher.encrypt(message)
+    return ciphered_data
+
+def own_unpad(string):
+    aux_string = ""
+    for character in string:
+        if(character != "_"):
+            aux_string = aux_string + character
+    return aux_string
+
+
 ClientSocket = socket.socket()
 print('Waiting for connection')
 try:
@@ -149,8 +167,74 @@ while True:
         # Tell the server that we're done
         final_message = "finish"
         ClientSocket.send(final_message.encode("ascii"))
+    
+    elif final_encryption_mode == "OFB":
+        blocks_received = 0
+        print("decrypting using OFB")
+        final_message = ""
+        while True:
+            finished_full_blocks = False
+            ResponseNodB = ClientSocketToA.recv(16)
+            print("Node B received:", ResponseNodB)
         
+            print("size of message received:", len(ResponseNodB))
+            #implement own decryption method
+            block_cipher_encryption = simple_ecb_encryption_for_ofb_implementation(decrypted_key, decrypted_vector)
+            decrypted_vector = block_cipher_encryption
+            original_text = bxor(ResponseNodB, block_cipher_encryption)
 
+            print("original text is", original_text)
+            if original_text.decode('utf-8') != "abc4567890123456":
+                final_message = final_message + original_text.decode('utf-8')
+                blocks_received = blocks_received + 1
+                if blocks_received == 10:
+                    blocks_received = 0
+                    # tell the server you received 10 blocks
+                    print("Received 10 blocks")
+                    node_B_message = "10"
+                    #ClientSocket.send(node_B_message.encode("ascii"))
+                    #response = ClientSocket.recv(2048)
+                    #plain_response = response.decode('utf-8')
+                    #print("Server said", plain_response)
+
+            number_of_messages += 1
+            if original_text.decode('utf-8') == "abc4567890123456":
+                ResponseNodB = ClientSocketToA.recv(16)
+                #original_text = decrypt_ecb(decrypted_key, ResponseNodB)
+
+                block_cipher_encryption = simple_ecb_encryption_for_ofb_implementation(decrypted_key, decrypted_vector)
+                decrypted_vector = block_cipher_encryption
+                original_text = bxor(ResponseNodB, block_cipher_encryption)
+
+                after_full_blocks = original_text.decode('utf-8')
+            
+                if after_full_blocks == "herecomesonemore":
+                    ResponseNodB = ClientSocketToA.recv(16)
+
+                    #own unpad function
+                    block_cipher_encryption = simple_ecb_encryption_for_ofb_implementation(decrypted_key, decrypted_vector)
+                    decrypted_vector = block_cipher_encryption
+                    original_text = bxor(ResponseNodB, block_cipher_encryption)
+                    original_text = own_unpad(original_text)
+
+                    print(original_text.decode('utf-8'))
+                    full_text = full_text + original_text
+                    blocks_received = blocks_received + 1
+                    if blocks_received == 10:
+                        blocks_received = 0
+                        # tell the server you received 10 blocks
+                        node_B_message = "10"
+                        #ClientSocket.send(node_B_message.encode("ascii"))
+                        #response = ClientSocket.recv(2048)
+                        #plain_response = response.decode('utf-8')
+                        #print("Server said", plain_response)
+                    break 
+                elif after_full_blocks == "nomoreblocksaaaa":
+                    break
+    final_message_to_server = "finish"
+    #ClientSocket.send(final_message.encode("ascii"))
+    print(final_message_to_server)
+    print(final_message)
     ClientSocketToA.close()
 
 ClientSocket.close()
