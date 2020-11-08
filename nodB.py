@@ -32,6 +32,15 @@ def encrypt_confirmation_message_ofb(key, message, initialization_vector):
     ciphered_data = cipher.encrypt(message.encode('ascii'))
     return ciphered_data
 
+def decrypt_ecb(key, message):
+    cipher = AES.new(key, AES.MODE_ECB)  # Setup cipher
+    original_data = cipher.decrypt(message)
+    return original_data
+
+def decrypt_ecb_unpad(key, message):
+    cipher = AES.new(key, AES.MODE_ECB)  # Setup cipher
+    original_data = unpad(cipher.decrypt(message), AES.block_size)
+    return original_data
 
 ClientSocket = socket.socket()
 print('Waiting for connection')
@@ -78,5 +87,42 @@ while True:
         print("confirmation message is", confirmation_message)
         ClientSocket.send(confirmation_message)
 
+    
+    ClientSocketToA = socket.socket()
+    print('Waiting for connection')
+    try:
+        ClientSocketToA.connect(('127.0.0.1', 1238))
+    except socket.error as e:
+        print(str(e))
+
+    number_of_messages = 0
+    full_text = ""
+    while True:
+        finished_full_blocks = False
+        ResponseNodB = ClientSocketToA.recv(16)
+        print("Node B received:", ResponseNodB)
+        
+        print("size of message received:", len(ResponseNodB))
+        original_text = decrypt_ecb(decrypted_key, ResponseNodB)
+        print(original_text.decode('utf-8'))
+        if original_text.decode('utf-8') != "1234567890123456":
+            full_text = full_text + original_text.decode('utf-8')
+        number_of_messages += 1
+        if original_text.decode('utf-8') == "1234567890123456":
+            ResponseNodB = ClientSocketToA.recv(16)
+            original_text = decrypt_ecb(decrypted_key, ResponseNodB)
+            after_full_blocks = original_text.decode('utf-8')
+            
+            if after_full_blocks == "herecomesonemore":
+                ResponseNodB = ClientSocketToA.recv(16)
+                original_text = decrypt_ecb_unpad(decrypted_key, ResponseNodB)
+                print(original_text.decode('utf-8'))
+                full_text = full_text + original_text.decode('utf-8')
+                break 
+            elif after_full_blocks == "nomoreblocksaaaa":
+                break
+
+    print("Full decrypted text:", full_text)
+    ClientSocketToA.close()
 
 ClientSocket.close()

@@ -78,4 +78,74 @@ while True:
         print("confirmation message is", confirmation_message)
         ClientSocket.send(confirmation_message)
 
+
+    # Node A becomes a server
+    ServerSocketA = socket.socket()
+    try:
+        ServerSocketA.bind(('127.0.0.1', 1238))
+    except socket.error as e:
+        print(str(e))
+    ServerSocketA.listen(5)
+    while True:
+        ClientB, addressB = ServerSocketA.accept()
+        print('Someone connected to us: ' + addressB[0] + ':' + str(addressB[1]))
+        #ClientB.send(str.encode('You just connected to node A server\n'))
+
+        if final_encryption_mode == 'ECB':
+            # encrypt ECB
+            plaintext_file = 'message.txt'
+            file_in = open(plaintext_file, 'r') # Open the file to read bytes
+            plaintext_data = file_in.read()
+            file_in.close()
+            counter = 0
+            blocks_sent = 0
+            substring = ""
+            for character in plaintext_data:
+                substring = substring + character
+                counter = counter + 1
+                if counter == 16:
+                    blocks_sent = blocks_sent + 1
+                    # encrypt this block and send it to node B
+                    binary_substring = substring.encode("ascii") #convert it to binary so this can be encrypted
+                    cipher = AES.new(decrypted_key, AES.MODE_ECB) # Create a AES cipher object with the key using the mode ECB
+                    ciphered_data = cipher.encrypt(binary_substring) # Pad the input data and then encrypt
+
+                    #now send it to node B
+                    ClientB.send(ciphered_data)
+
+                    substring = ""
+                    counter = 0
+
+            sent_full_blocks = "1234567890123456"
+            sent_full_blocks_binary = sent_full_blocks.encode("ascii")
+            cipher = AES.new(decrypted_key, AES.MODE_ECB)
+            ciphered_data = cipher.encrypt(sent_full_blocks_binary)
+            ClientB.send(ciphered_data)
+            # send this and send if there is needed one more decryption with padding
+            padded_string = ""
+            more_or_not = ""
+            if counter != 0:
+                # tell node B that one more is coming
+                more_or_not = "herecomesonemore"
+                more_or_not_binary = more_or_not.encode("ascii")
+                cipher = AES.new(decrypted_key, AES.MODE_ECB)
+                ciphered_data = cipher.encrypt(more_or_not_binary)
+                ClientB.send(ciphered_data)
+                for i in range(len(plaintext_data) - counter, len(plaintext_data)):
+                    padded_string = padded_string + plaintext_data[i]
+                    # here we will pad the string. padded_string needs to be padded and encrypted and sent
+                binary_substring = padded_string.encode("ascii") #convert it to binary so this can be encrypted
+                cipher = AES.new(decrypted_key, AES.MODE_ECB) # Create a AES cipher object with the key using the mode ECB
+                ciphered_data = cipher.encrypt(pad(binary_substring, AES.block_size)) # Pad the input data and then encrypt
+                ClientB.send(ciphered_data)
+            else:
+                more_or_not = "nomoreblocksaaaa"
+                more_or_not_binary = more_or_not.encode("ascii")
+                cipher = AES.new(decrypted_key, AES.MODE_ECB)
+                ciphered_data = cipher.encrypt(more_or_not_binary)
+                ClientB.send(ciphered_data)
+
+    ClientB.close()
+    ServerSocketA.close()
+
 ClientSocket.close()

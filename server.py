@@ -160,6 +160,7 @@ while True:
             confirmation_node_B_enc = Client2.recv(2048)
             confirmation_node_B = decrypt_confirmation_ecb(confirmation_node_B_enc) 
             print("Server received confirmation: ", confirmation_node_B.decode('utf-8'))
+            print("Now A and B will send ECB encrypted text")
 
         elif final_encryption_mode__plaintext == 'OFB':
             confirmation_node_A_enc = Client.recv(2048)
@@ -169,6 +170,15 @@ while True:
             confirmation_node_B_enc = Client2.recv(2048)
             confirmation_node_B = decrypt_confirmation_ofb(confirmation_node_B_enc)
             print("Server received confirmation:", confirmation_node_B.decode('utf-8'))
+            print("Now A and B will send encrypted OFB text")
+        
+        print("Now A and B will talk to each other(encrypted)")
+        while True:
+            #wait for A and B communication to end
+
+            
+
+            break
 
     Client2.close()
     Client.close()
