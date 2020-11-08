@@ -6,6 +6,9 @@ Documentatie:
 Limbajul de programare ales a fost Python.
 Pentru a putea rula programul, este necesar sa aveti instalat python 3+ si biblioteca pycryptodome pe calculator.
 
+Am pus un video pe youtube in care explic in mare ce am facut + fac un demo, in caz de nu doriti sa cititi textul acesta :)
+Link: https://www.youtube.com/watch?v=7Zir5D_bFzs&feature=youtu.be
+
 Pentru a instala pycrytodome:
 	python -m pip install pycryptodome
 
