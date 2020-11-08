@@ -97,32 +97,60 @@ while True:
 
     number_of_messages = 0
     full_text = ""
-    while True:
-        finished_full_blocks = False
-        ResponseNodB = ClientSocketToA.recv(16)
-        print("Node B received:", ResponseNodB)
-        
-        print("size of message received:", len(ResponseNodB))
-        original_text = decrypt_ecb(decrypted_key, ResponseNodB)
-        print(original_text.decode('utf-8'))
-        if original_text.decode('utf-8') != "1234567890123456":
-            full_text = full_text + original_text.decode('utf-8')
-        number_of_messages += 1
-        if original_text.decode('utf-8') == "1234567890123456":
-            ResponseNodB = ClientSocketToA.recv(16)
-            original_text = decrypt_ecb(decrypted_key, ResponseNodB)
-            after_full_blocks = original_text.decode('utf-8')
-            
-            if after_full_blocks == "herecomesonemore":
-                ResponseNodB = ClientSocketToA.recv(16)
-                original_text = decrypt_ecb_unpad(decrypted_key, ResponseNodB)
-                print(original_text.decode('utf-8'))
-                full_text = full_text + original_text.decode('utf-8')
-                break 
-            elif after_full_blocks == "nomoreblocksaaaa":
-                break
+    blocks_received = 0
 
-    print("Full decrypted text:", full_text)
+    if final_encryption_mode == "ECB":
+        while True:
+            finished_full_blocks = False
+            ResponseNodB = ClientSocketToA.recv(16)
+            print("Node B received:", ResponseNodB)
+        
+            print("size of message received:", len(ResponseNodB))
+            original_text = decrypt_ecb(decrypted_key, ResponseNodB)
+            print(original_text.decode('utf-8'))
+            if original_text.decode('utf-8') != "1234567890123456":
+                full_text = full_text + original_text.decode('utf-8')
+                blocks_received = blocks_received + 1
+                if blocks_received == 10:
+                    blocks_received = 0
+                    # tell the server you received 10 blocks
+                    print("Received 10 blocks")
+                    node_B_message = "10"
+                    ClientSocket.send(node_B_message.encode("ascii"))
+                    response = ClientSocket.recv(2048)
+                    plain_response = response.decode('utf-8')
+                    print("Server said", plain_response)
+
+            number_of_messages += 1
+            if original_text.decode('utf-8') == "1234567890123456":
+                ResponseNodB = ClientSocketToA.recv(16)
+                original_text = decrypt_ecb(decrypted_key, ResponseNodB)
+                after_full_blocks = original_text.decode('utf-8')
+            
+                if after_full_blocks == "herecomesonemore":
+                    ResponseNodB = ClientSocketToA.recv(16)
+                    original_text = decrypt_ecb_unpad(decrypted_key, ResponseNodB)
+                    print(original_text.decode('utf-8'))
+                    full_text = full_text + original_text.decode('utf-8')
+                    blocks_received = blocks_received + 1
+                    if blocks_received == 10:
+                        blocks_received = 0
+                        # tell the server you received 10 blocks
+                        node_B_message = "10"
+                        ClientSocket.send(node_B_message.encode("ascii"))
+                        response = ClientSocket.recv(2048)
+                        plain_response = response.decode('utf-8')
+                        print("Server said", plain_response)
+                    break 
+                elif after_full_blocks == "nomoreblocksaaaa":
+                    break
+
+        print("Full decrypted text:", full_text)
+        # Tell the server that we're done
+        final_message = "finish"
+        ClientSocket.send(final_message.encode("ascii"))
+        
+
     ClientSocketToA.close()
 
 ClientSocket.close()

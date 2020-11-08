@@ -86,6 +86,8 @@ while True:
     except socket.error as e:
         print(str(e))
     ServerSocketA.listen(5)
+    blocks_sent = 0
+
     while True:
         ClientB, addressB = ServerSocketA.accept()
         print('Someone connected to us: ' + addressB[0] + ':' + str(addressB[1]))
@@ -112,6 +114,16 @@ while True:
 
                     #now send it to node B
                     ClientB.send(ciphered_data)
+                    # tell the server that A sent 10 blocks
+                    if blocks_sent == 10:
+                        blocks_sent = 0
+                        print("Sent 10 blocks to node B, let's tell that to the server!")
+                        node_A_message = "10"
+                        ClientSocket.send(node_A_message.encode("ascii"))
+                        
+                        response = ClientSocket.recv(2048)
+                        plain_response = response.decode('utf-8')
+                        print("Server said", plain_response)
 
                     substring = ""
                     counter = 0
@@ -138,12 +150,30 @@ while True:
                 cipher = AES.new(decrypted_key, AES.MODE_ECB) # Create a AES cipher object with the key using the mode ECB
                 ciphered_data = cipher.encrypt(pad(binary_substring, AES.block_size)) # Pad the input data and then encrypt
                 ClientB.send(ciphered_data)
+
+                blocks_sent = blocks_sent + 1
+                # tell the server that A sent 10 blocks
+                if blocks_sent == 10:
+                    blocks_sent = 0
+                    print("Sent 10 blocks to node B, let's tell that to the server!")
+                    node_A_message = "10"
+                    ClientSocket.send(node_A_message.encode("ascii"))
+                    response = ClientSocket.recv(2048)
+                    plain_response = response.decode('utf-8')
+                    print("Server said", plain_response)
+            
+
             else:
                 more_or_not = "nomoreblocksaaaa"
                 more_or_not_binary = more_or_not.encode("ascii")
                 cipher = AES.new(decrypted_key, AES.MODE_ECB)
                 ciphered_data = cipher.encrypt(more_or_not_binary)
                 ClientB.send(ciphered_data)
+
+            # Tell the server that we're done
+            final_message = "finish"
+            ClientSocket.send(final_message.encode("ascii"))
+            break
 
     ClientB.close()
     ServerSocketA.close()

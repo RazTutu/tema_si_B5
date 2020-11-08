@@ -175,10 +175,18 @@ while True:
         print("Now A and B will talk to each other(encrypted)")
         while True:
             #wait for A and B communication to end
-
+            message_from_A = Client.recv(2048)
+            message_from_B = Client2.recv(2048)
+            #message_from_B = Client2.recv(2048)
+            if message_from_A.decode('utf-8') == "10" and message_from_B.decode('utf-8') == "10":
+                print("A sent 10 blocks, B received 10 blocks. They can continue")
+                server_message = "continue"
+                Client.send(server_message.encode("ascii"))
+                Client2.send(server_message.encode("ascii"))
             
-
-            break
+            if message_from_A.decode('utf-8') == "finish" and message_from_B.decode('utf-8') == "finish":
+                print("Finished everything.")
+                break
 
     Client2.close()
     Client.close()
