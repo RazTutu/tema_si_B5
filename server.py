@@ -85,7 +85,6 @@ while True:
 
     
     while True:
-        #in al doilea while, adica in asta, cred ca comunici efectiv chestii
         decision_node_A = Client.recv(2048)
         reply = 'Server received and Says: ' + decision_node_A.decode('utf-8')
         if not decision_node_A:
@@ -106,7 +105,7 @@ while True:
         final_encryption_mode__plaintext = ''
         # see if they want ECB or OFB and give them back the encrypted key
         if answer_from_A == answer_from_B and answer_from_A == 'ECB':
-            print("Ambele noduri vor ECB")
+            print("Both nodes decided to go ECB")
             # criptez cheia K1 si o trimit
             final_encryption_mode = encrypt_ecb_or_ofb_response('ECB')
             final_encryption_mode__plaintext = 'ECB'
@@ -114,15 +113,15 @@ while True:
             initialization_vector = encrypt_initialization_vector('no')
 
         elif answer_from_A == answer_from_B and answer_from_A == 'OFB':
-            print("Ambele noduri vor OFB")
+            print("Both nodes decided to go OFB")
             final_encryption_mode = encrypt_ecb_or_ofb_response('OFB')
             final_encryption_mode__plaintext = 'OFB'
             encrypted_key = encrypt_k2()
-            # criptez cheia K2 si o trimit, impreuna cu vectorul de initializare
+            # encrypt K2 and the initialization vector and send them
             initialization_vector = encrypt_initialization_vector(non_initialized_vector)
         else:
             print("Nodes didn't give the same input. We will choose the encryption method random :)")
-            # aleg random un mod
+            # Choose a random mode
             random_number = randrange(2) # 0 or 1
             if random_number == 0:
                 print("The server decided to choose ECB")
@@ -140,7 +139,7 @@ while True:
                 initialization_vector = encrypt_initialization_vector(non_initialized_vector)
             
 
-        print("acum le transmit nodurilor mesajul")
+        print("Sending the messages to the nodes")
         # send back to the clients the encryption mode
         Client.send(final_encryption_mode)
         Client2.send(final_encryption_mode)
@@ -177,7 +176,6 @@ while True:
             #wait for A and B communication to end
             message_from_A = Client.recv(2048)
             message_from_B = Client2.recv(2048)
-            #message_from_B = Client2.recv(2048)
             if message_from_A.decode('utf-8') == "10" and message_from_B.decode('utf-8') == "10":
                 print("A sent 10 blocks, B received 10 blocks. They can continue")
                 server_message = "continue"
@@ -194,9 +192,3 @@ while True:
 
 ServerSocket.close()
 ServerSocket2.close()
-
-
-
-#DESCHIDE INTREBARILE DE MAI JOS
-#https://stackoverflow.com/questions/10810249/python-socket-multiple-clients
-#https://docs.python.org/3/library/socketserver.html#socketserver-tcpserver-example

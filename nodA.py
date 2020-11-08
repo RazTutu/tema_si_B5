@@ -23,7 +23,6 @@ def decrypt_vector(encrypted_vector):
 
 def encrypt_confirmation_message_ecb(key, message):
     cipher = AES.new(key, AES.MODE_ECB) # Create a AES cipher object with the key using the mode ECB
-    # no need for padding because key is of 16 bytes, the same as an AES block
     ciphered_data = cipher.encrypt(pad(message.encode('ascii'), AES.block_size))
     return ciphered_data
 
@@ -34,7 +33,6 @@ def encrypt_confirmation_message_ofb(key, message, initialization_vector):
 
 def simple_ecb_encryption_for_ofb_implementation(key, message):
     cipher = AES.new(key, AES.MODE_ECB) # Create a AES cipher object with the key using the mode ECB
-    # no need for padding because key is of 16 bytes, the same as an AES block
     ciphered_data = cipher.encrypt(message)
     return ciphered_data
 
@@ -61,10 +59,6 @@ print(Response)
 while True:
     Input = input('Say Something: ')
     ClientSocket.send(str.encode(Input))
-    #Response = ClientSocket.recv(1024)
-    #print(Response.decode('utf-8'))
-
-    # now got 3 answers from server with encryption_mode, key, and initialization_vector
     
     encryption_mode = ClientSocket.recv(1024)
     encryption_key = ClientSocket.recv(1024)
@@ -73,13 +67,13 @@ while True:
 
     # decrypt the final encryption method with K3 sent from the server(ecb or ofb but encrypted)
     final_encryption_mode = decrypt_mode(encryption_mode).decode("utf-8")
-    print("The mode we will encrypt is", final_encryption_mode)
+    print("The mode we will encrypt is:", final_encryption_mode)
     # decrypted the key and stored it inside decrypted_key
     decrypted_key = decrypt_key(encryption_key)
-    print("Cheia decriptata folosind K3 este", decrypted_key)
+    print("The received key, decrypted using K3 is:", decrypted_key)
     # decrypt the initialization vector response
     decrypted_vector = decrypt_vector(initialization_vector)
-    print("The initialization vector is", decrypted_vector)
+    print("The initialization vector is:", decrypted_vector)
 
     # send confirmation message back to the server
     message = 'Node A'
@@ -107,7 +101,6 @@ while True:
     while True:
         ClientB, addressB = ServerSocketA.accept()
         print('Someone connected to us: ' + addressB[0] + ':' + str(addressB[1]))
-        #ClientB.send(str.encode('You just connected to node A server\n'))
 
         if final_encryption_mode == 'ECB':
             # encrypt ECB
@@ -211,7 +204,6 @@ while True:
                     block_cipher_encryption = simple_ecb_encryption_for_ofb_implementation(decrypted_key, decrypted_vector)
                     # the result is the next initialization vector
                     decrypted_vector = block_cipher_encryption
-                    #get the ciphered_data
                     ciphered_data = bxor(substring.encode("ascii"), block_cipher_encryption)
 
                     #now send it to node B
@@ -235,7 +227,6 @@ while True:
             block_cipher_encryption = simple_ecb_encryption_for_ofb_implementation(decrypted_key, decrypted_vector)
             # the result is the next initialization vector
             decrypted_vector = block_cipher_encryption
-            #get the ciphered_data
             ciphered_data = bxor(sent_full_blocks_binary, block_cipher_encryption)
 
             ClientB.send(ciphered_data)
@@ -248,7 +239,6 @@ while True:
                 block_cipher_encryption = simple_ecb_encryption_for_ofb_implementation(decrypted_key, decrypted_vector)
                 # the result is the next initialization vector
                 decrypted_vector = block_cipher_encryption
-                #get the ciphered_data
                 ciphered_data = bxor(more_or_not, block_cipher_encryption)
 
                 ClientB.send(ciphered_data)
@@ -259,7 +249,6 @@ while True:
                 block_cipher_encryption = simple_ecb_encryption_for_ofb_implementation(decrypted_key, decrypted_vector)
                 # the result is the next initialization vector
                 decrypted_vector = block_cipher_encryption
-                #get the ciphered_data
                 ciphered_data = bxor(own_pad(padded_string).encode("ascii"), block_cipher_encryption)
 
                 ClientB.send(ciphered_data)

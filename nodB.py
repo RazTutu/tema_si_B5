@@ -23,7 +23,6 @@ def decrypt_vector(encrypted_vector):
 
 def encrypt_confirmation_message_ecb(key, message):
     cipher = AES.new(key, AES.MODE_ECB) # Create a AES cipher object with the key using the mode ECB
-    # no need for padding because key is of 16 bytes, the same as an AES block
     ciphered_data = cipher.encrypt(pad(message.encode('ascii'), AES.block_size))
     return ciphered_data
 
@@ -48,7 +47,6 @@ def bxor(ba1, ba2):
 
 def simple_ecb_encryption_for_ofb_implementation(key, message):
     cipher = AES.new(key, AES.MODE_ECB) # Create a AES cipher object with the key using the mode ECB
-    # no need for padding because key is of 16 bytes, the same as an AES block
     ciphered_data = cipher.encrypt(message)
     return ciphered_data
 
@@ -72,9 +70,6 @@ print(Response)
 while True:
     Input = input('Say Something: ')
     ClientSocket.send(str.encode(Input))
-    #Response = ClientSocket.recv(1024)
-    #print(Response.decode('utf-8'))
-
     # now got 3 answers from server with encryption_mode, key, and initialization_vector
     encryption_mode = ClientSocket.recv(1024)
     encryption_key = ClientSocket.recv(1024)
@@ -86,7 +81,7 @@ while True:
     print("The mode we will encrypt is", final_encryption_mode)
     # decrypted the key and stored it inside decrypted_key
     decrypted_key = decrypt_key(encryption_key)
-    print("Cheia decriptata folosind K3 este", decrypted_key)
+    print("The key we received using K3 to decrypt it is:", decrypted_key)
     # decrypt the initialization vector response
     decrypted_vector = decrypt_vector(initialization_vector)
     print("The initialization vector is", decrypted_vector)
@@ -210,7 +205,7 @@ while True:
                 if after_full_blocks == "herecomesonemore":
                     ResponseNodB = ClientSocketToA.recv(16)
 
-                    #own unpad function
+                    #our own unpad function
                     block_cipher_encryption = simple_ecb_encryption_for_ofb_implementation(decrypted_key, decrypted_vector)
                     decrypted_vector = block_cipher_encryption
                     original_text = bxor(ResponseNodB, block_cipher_encryption)
